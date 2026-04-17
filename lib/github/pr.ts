@@ -2,7 +2,7 @@ import { octokit } from "./client";
 import type { FixAction } from "../types";
 
 const BRANCH_PREFIX = "seo-fixes";
-const PR_TITLE = "SEO + GEO fixes";
+const DEFAULT_PR_TITLE = "SEO + GEO fixes";
 const PR_FOOTER = "\n\n---\n_Drafted by GEO Forge — review the diff before merging._";
 
 export interface OpenFixPrInput {
@@ -12,6 +12,10 @@ export interface OpenFixPrInput {
   defaultBranch: string;
   actions: FixAction[];
   bodyHeader: string;
+  /** Agent-supplied PR title. Falls back to a generic default. */
+  title?: string;
+  /** Agent-supplied commit body. Falls back to a file-list summary. */
+  commitMessage?: string;
 }
 
 export interface ExistingPrSummary {
@@ -68,6 +72,11 @@ export async function openFixPr(input: OpenFixPrInput): Promise<FixPrResult> {
     throw new Error("No fix actions to commit.");
   }
 
+  const title = input.title?.trim() || DEFAULT_PR_TITLE;
+  const commitBody =
+    input.commitMessage?.trim() ||
+    actions.map((a) => `* ${a.kind === "create" ? "create" : "update"} ${a.path}`).join("\n");
+
   // Each run creates a fresh PR on a timestamped branch — existing
   // seo-fixes/* PRs are surfaced upstream as informational, not terminal.
   const client = octokit(token);
@@ -114,10 +123,7 @@ export async function openFixPr(input: OpenFixPrInput): Promise<FixPrResult> {
   });
 
   // 4. Create a single commit pointing to the new tree.
-  const message =
-    PR_TITLE +
-    "\n\n" +
-    actions.map((a) => `* ${a.kind === "create" ? "create" : "update"} ${a.path}`).join("\n");
+  const message = `${title}\n\n${commitBody}`;
   const { data: newCommit } = await client.git.createCommit({
     owner,
     repo,
@@ -140,7 +146,7 @@ export async function openFixPr(input: OpenFixPrInput): Promise<FixPrResult> {
     repo,
     head: branchName,
     base: defaultBranch,
-    title: PR_TITLE,
+    title,
     body: bodyHeader + PR_FOOTER,
   });
 

@@ -117,6 +117,8 @@ export async function POST(request: Request) {
           defaultBranch: repo.defaultBranch,
           actions,
           bodyHeader,
+          title: result.prMetadata?.title,
+          commitMessage: result.prMetadata?.commitMessage,
         });
 
         // openFixPr no longer returns a "reused" branch since we bypass

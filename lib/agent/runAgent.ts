@@ -4,7 +4,7 @@ import type {
 } from "openai/resources/chat/completions";
 import { aiClient, aiModel, isAiEnabled } from "../ai/client";
 import type { Issue, RepoContext } from "../types";
-import { AGENT_TOOLS, executeTool, type ToolExecutionContext } from "./tools";
+import { AGENT_TOOLS, executeTool, type PrMetadata, type ToolExecutionContext } from "./tools";
 import type { AgentEvent, AgentProposal } from "./types";
 
 const SYSTEM_PROMPT = `You are an SEO and Generative-Engine-Optimization (GEO) coding agent. The user has connected a GitHub repo and selected a list of issues for you to fix.
@@ -13,9 +13,10 @@ You operate by calling tools:
   - list_files(contains?)         — explore the repo tree
   - read_file(path)               — inspect a specific file
   - propose_file_change(...)      — stage a file change for the final PR commit
+  - set_pr_metadata(...)          — set the PR title + commit message body
   - finish()                      — signal you're done
 
-Your goal: for each selected issue, identify the right file(s) to modify and stage the changes via propose_file_change. When you've handled every issue, call finish().
+Your workflow: for each selected issue, identify the right file(s) and stage changes via propose_file_change. AFTER all proposals are staged, call set_pr_metadata once with a specific title (e.g. "Add sitemap.xml and inject meta description into Rails layout") and a 2–4 line commit message body. THEN call finish().
 
 Hard rules:
   - For UPDATES: read the file first. Then output the COMPLETE modified file in propose_file_change.content (not a diff). Preserve all existing code, indentation, ERB / Blade / HEEx tags, and comments. Only add what's needed.
@@ -42,6 +43,9 @@ export interface RunAgentResult {
   proposals: AgentProposal[];
   iterations: number;
   finishedCleanly: boolean;
+  /** Set by the agent via set_pr_metadata. Null if it skipped the call —
+   * caller falls back to a static title + commit message. */
+  prMetadata: PrMetadata | null;
 }
 
 export async function runAgent(
@@ -56,11 +60,13 @@ export async function runAgent(
 
   const proposals = new Map<string, AgentProposal>();
   const finished = { value: false };
+  const prMetadata: { value: PrMetadata | null } = { value: null };
   const exec: ToolExecutionContext = {
     ctx: input.ctx,
     proposals,
     finished,
     issues: input.issues,
+    prMetadata,
   };
 
   emit({
@@ -151,6 +157,7 @@ export async function runAgent(
     proposals: proposalsList,
     iterations: iteration,
     finishedCleanly: finished.value,
+    prMetadata: prMetadata.value,
   };
 }
 

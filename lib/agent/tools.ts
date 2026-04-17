@@ -78,9 +78,32 @@ export const AGENT_TOOLS = [
   {
     type: "function" as const,
     function: {
+      name: "set_pr_metadata",
+      description:
+        "Set the title and commit message for the PR. Call this once AFTER you've staged all your file changes and BEFORE calling finish(). The title should be concise and specific (e.g. 'Add sitemap.xml and inject meta description into Rails layout' — not 'SEO fixes'). The commit message body should be 2–4 short lines explaining what changed and why.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: {
+            type: "string",
+            description: "PR title — max 72 chars, imperative mood, specific to what changed.",
+          },
+          commit_message: {
+            type: "string",
+            description:
+              "Commit body — 2–4 short lines (no prefix, no header). Explains what each file change does in plain language.",
+          },
+        },
+        required: ["title", "commit_message"],
+      },
+    },
+  },
+  {
+    type: "function" as const,
+    function: {
       name: "finish",
       description:
-        "Call this when you have proposed all the file changes needed to fix the selected issues. After this, the agent loop ends and the PR is opened.",
+        "Call this when you have proposed all the file changes needed to fix the selected issues AND set the PR metadata. After this, the agent loop ends and the PR is opened.",
       parameters: { type: "object", properties: {}, required: [] },
     },
   },
@@ -102,6 +125,11 @@ const SKIP_PATTERNS = [
   /(?:^|\/)deps\//,
 ];
 
+export interface PrMetadata {
+  title: string;
+  commitMessage: string;
+}
+
 export interface ToolExecutionContext {
   ctx: RepoContext;
   proposals: Map<string, AgentProposal>;
@@ -109,6 +137,9 @@ export interface ToolExecutionContext {
   /** The issues the agent is fixing — used by guardrails to validate
    * that proposals actually contain the markup the issue requires. */
   issues: Issue[];
+  /** Set by the agent via the set_pr_metadata tool. Falls back to a
+   * static template if the agent never calls it. */
+  prMetadata: { value: PrMetadata | null };
 }
 
 export interface ToolExecutionResult {
@@ -141,6 +172,12 @@ export async function executeTool(
         String(args.path ?? ""),
         String(args.content ?? ""),
         String(args.kind ?? "")
+      );
+    case "set_pr_metadata":
+      return setPrMetadata(
+        exec,
+        String(args.title ?? ""),
+        String(args.commit_message ?? "")
       );
     case "finish":
       exec.finished.value = true;
@@ -265,6 +302,42 @@ async function proposeFileChange(
     ok: true,
     data: { path, kind, bytes: content.length },
     summary: `staged ${kind} of ${path} (${content.length} bytes)`,
+  };
+}
+
+const PR_TITLE_MAX = 72;
+
+function setPrMetadata(
+  exec: ToolExecutionContext,
+  title: string,
+  commitMessage: string
+): ToolExecutionResult {
+  const cleanTitle = title.trim().replace(/\s+/g, " ");
+  const cleanBody = commitMessage.trim();
+
+  if (!cleanTitle) {
+    return { ok: false, error: "missing_title", summary: "title is empty" };
+  }
+  if (cleanTitle.length > PR_TITLE_MAX) {
+    return {
+      ok: false,
+      error: "title_too_long",
+      summary: `title is ${cleanTitle.length} chars (max ${PR_TITLE_MAX}) — be more concise`,
+    };
+  }
+  if (!cleanBody) {
+    return {
+      ok: false,
+      error: "missing_commit_message",
+      summary: "commit_message is empty",
+    };
+  }
+
+  exec.prMetadata.value = { title: cleanTitle, commitMessage: cleanBody };
+  return {
+    ok: true,
+    data: { title: cleanTitle },
+    summary: `set PR title: "${cleanTitle}"`,
   };
 }
 
