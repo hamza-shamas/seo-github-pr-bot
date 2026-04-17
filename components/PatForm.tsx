@@ -31,7 +31,7 @@ export function PatForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+    <form onSubmit={handleSubmit} className="flex flex-1 flex-col gap-3">
       <label className="font-mono text-[11px] uppercase tracking-[0.18em] text-foreground-muted">
         Personal access token
       </label>
@@ -47,18 +47,6 @@ export function PatForm() {
           disabled={isPending}
         />
       </div>
-      {error && (
-        <p className="font-mono text-xs text-danger" role="alert">
-          {error}
-        </p>
-      )}
-      <button
-        type="submit"
-        disabled={isPending}
-        className="btn-primary mt-1 inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm"
-      >
-        {isPending ? "Verifying…" : "Connect with token"}
-      </button>
       <p className="text-xs leading-5 text-foreground-muted">
         Need a token?{" "}
         <a
@@ -70,6 +58,18 @@ export function PatForm() {
           Generate one with <span className="font-mono">repo</span> scope →
         </a>
       </p>
+      {error && (
+        <p className="font-mono text-xs text-danger" role="alert">
+          {error}
+        </p>
+      )}
+      <button
+        type="submit"
+        disabled={isPending}
+        className="btn-primary mt-auto inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm"
+      >
+        {isPending ? "Verifying…" : "Connect with token"}
+      </button>
     </form>
   );
 }

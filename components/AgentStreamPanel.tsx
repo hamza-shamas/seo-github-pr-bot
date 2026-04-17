@@ -13,6 +13,8 @@ interface AgentStreamPanelProps {
    * sitemap.xml or robots.txt is among them. Drives whether the
    * "Site URL" input appears in the dock. */
   needsSiteUrl: boolean;
+  /** False when the connected token has no write access to this repo. */
+  canPush: boolean;
   onClear: () => void;
 }
 
@@ -21,6 +23,7 @@ export function AgentStreamPanel({
   repo,
   selectedIds,
   needsSiteUrl,
+  canPush,
   onClear,
 }: AgentStreamPanelProps) {
   const [events, setEvents] = useState<AgentEvent[]>([]);
@@ -142,12 +145,16 @@ export function AgentStreamPanel({
           <div className="flex flex-col">
             <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground-muted">
               {status === "idle" && "Selected"}
-              {status === "running" && "Agent running"}
-              {status === "done" && "Agent done"}
-              {status === "error" && "Agent failed"}
+              {status === "running" && "Working"}
+              {status === "done" && "Done"}
+              {status === "error" && "Failed"}
             </span>
             <span className="font-mono text-sm text-foreground">
-              {selectedIds.length} fix{selectedIds.length === 1 ? "" : "es"} ready
+              {status === "idle" &&
+                `${selectedIds.length} issue${selectedIds.length === 1 ? "" : "s"}`}
+              {status === "running" && "Fixing the issues…"}
+              {status === "done" && "Fixed"}
+              {status === "error" && "Please try again"}
             </span>
             {error && <span className="mt-1 font-mono text-xs text-danger">{error}</span>}
           </div>
@@ -164,9 +171,15 @@ export function AgentStreamPanel({
                 <button
                   type="button"
                   onClick={start}
+                  disabled={!canPush}
+                  title={
+                    canPush
+                      ? undefined
+                      : "Read-only repo — connect a repo you own (or are a collaborator on) to run the AI agent."
+                  }
                   className="btn-primary inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm"
                 >
-                  Run AI agent →
+                  {canPush ? "Run AI agent →" : "Read-only — can't open PR"}
                 </button>
               </>
             )}

@@ -58,6 +58,20 @@ export async function POST(request: Request) {
         }
 
         const repo = await fetchRepo(user.token, parsed.owner, parsed.repo);
+
+        // Pre-flight: don't burn AI tokens if we already know the PR
+        // creation will 404. The front-end gates this too, but defensive.
+        if (!repo.canPush) {
+          send({
+            type: "error",
+            message:
+              "Your token doesn't have write access to this repo, so the agent can't open a pull request. Connect a repo you own (or are a collaborator on) and try again.",
+          });
+          send({ type: "end" });
+          controller.close();
+          return;
+        }
+
         const ctx = await buildRepoContext({
           token: user.token,
           owner: repo.owner,
@@ -91,7 +105,7 @@ export async function POST(request: Request) {
           send({
             type: "error",
             message:
-              "Agent finished without proposing any file changes. The selected issues may not be auto-fixable for this repo.",
+              "The agent inspected the repo and decided none of the selected issues need a code change here — likely because the project doesn't have the kind of file the rule expects (e.g. no HTML / template layout exists for a meta-description fix). Try selecting different issues, or pick a repo with the relevant files.",
           });
           send({ type: "end" });
           controller.close();
@@ -143,10 +157,14 @@ export async function POST(request: Request) {
         send({ type: "end" });
         controller.close();
       } catch (err) {
-        send({
-          type: "error",
-          message: err instanceof Error ? err.message : "agent failed",
-        });
+        const raw = err instanceof Error ? err.message : "agent failed";
+        // Translate the most common GitHub write-permission failures into
+        // human-readable copy. Octokit raises "Not Found" / 404 when the
+        // token can read the repo but can't push.
+        const friendly = /not found|404/i.test(raw)
+          ? "GitHub returned 404 when staging the PR commit — the token usually has read access but can't push to this repo. Connect a repo you own (or are a collaborator on)."
+          : raw;
+        send({ type: "error", message: friendly });
         send({ type: "end" });
         controller.close();
       }

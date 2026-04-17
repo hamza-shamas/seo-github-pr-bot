@@ -46,13 +46,30 @@ export default async function ScanPage({ params }: ScanPageProps) {
       />
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <ScanSummary scan={scan} />
+        {!connectedRepo.canPush && <ReadOnlyBanner repo={connectedRepo.fullName} />}
         {scan.issues.length === 0 ? (
           <EmptyState />
         ) : (
-          <ScanResultsClient scan={scan} />
+          <ScanResultsClient scan={scan} canPush={connectedRepo.canPush} />
         )}
       </div>
     </main>
+  );
+}
+
+function ReadOnlyBanner({ repo }: { repo: string }) {
+  return (
+    <aside className="rounded-2xl border border-accent-violet/40 bg-accent-violet/5 px-5 py-4">
+      <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-accent-violet">
+        Read-only · {repo}
+      </p>
+      <p className="mt-2 text-sm text-foreground-muted">
+        Your token doesn&apos;t have write access to this repo, so the agent can&apos;t
+        open a pull request here. The scan still runs and shows you what&apos;s missing —
+        connect a repo you own (or a repo you&apos;re a collaborator on) to run the
+        AI fix agent.
+      </p>
+    </aside>
   );
 }
 
