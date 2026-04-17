@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ConnectedRepo, SessionUser } from "@/lib/types";
 import { RepoForm } from "./RepoForm";
 import { RepoDisconnectButton } from "./RepoDisconnectButton";
@@ -39,8 +40,8 @@ function PickRepoView() {
       </h1>
 
       <p className="max-w-lg text-balance text-base leading-relaxed text-foreground-muted">
-        We&apos;ll verify your token has access to the repo, then unlock the SEO + GEO
-        scanner. The scan flow ships in PR 2 — for now we confirm the connection.
+        We&apos;ll verify your token has access to the repo, then run the SEO + GEO
+        scanner against the default branch.
       </p>
 
       <RepoForm />
@@ -99,16 +100,14 @@ function ConnectedRepoView({ repo }: { repo: ConnectedRepo }) {
       </article>
 
       <div className="flex flex-col items-center gap-3">
-        <button
-          type="button"
-          disabled
+        <Link
+          href={`/scan/${repo.owner}/${repo.name}`}
           className="btn-primary inline-flex h-11 items-center justify-center rounded-xl px-6 text-sm"
-          title="Scan flow ships in PR 2"
         >
           Run SEO + GEO scan →
-        </button>
+        </Link>
         <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground-muted">
-          Scanner ships in PR 2
+          Auto-fix PR ships in PR 2b
         </span>
         <RepoDisconnectButton />
       </div>
