@@ -7,9 +7,12 @@ import { AgentStreamPanel } from "./AgentStreamPanel";
 
 interface ScanResultsClientProps {
   scan: ScanResult;
+  /** False when the connected token has no write access to this repo —
+   * agent can scan but PR creation is blocked. */
+  canPush: boolean;
 }
 
-export function ScanResultsClient({ scan }: ScanResultsClientProps) {
+export function ScanResultsClient({ scan, canPush }: ScanResultsClientProps) {
   // With the AI agent, every detected issue is fixable in principle —
   // the agent will figure out which files to touch (or skip the issue if
   // it genuinely can't be fixed). The UI lets the user select any of them.
@@ -87,6 +90,7 @@ export function ScanResultsClient({ scan }: ScanResultsClientProps) {
         repo={scan.repo.name}
         selectedIds={[...selected]}
         needsSiteUrl={needsSiteUrl}
+        canPush={canPush}
         onClear={clear}
       />
     </>

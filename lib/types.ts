@@ -16,6 +16,10 @@ export interface ConnectedRepo {
   defaultBranch: string;
   isPrivate: boolean;
   htmlUrl: string;
+  /** True when the authenticated token can push to this repo. False for
+   * public repos the user is just reading (e.g. someone else's project).
+   * Drives whether the AI agent can open a PR or only run a dry scan. */
+  canPush: boolean;
 }
 
 export interface SessionData {

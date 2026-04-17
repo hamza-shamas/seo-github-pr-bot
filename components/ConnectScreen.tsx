@@ -52,14 +52,9 @@ export function ConnectScreen({ oauthError }: ConnectScreenProps) {
         <div className="grid w-full grid-cols-1 gap-5 lg:grid-cols-2">
           <article className="glass relative flex flex-col gap-6 rounded-2xl p-7">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-accent-cyan">
-                  Option A
-                </p>
-                <h2 className="mt-2 text-xl font-medium tracking-tight text-foreground">
-                  Sign in with GitHub
-                </h2>
-              </div>
+              <h2 className="text-xl font-medium tracking-tight text-foreground">
+                Sign in with GitHub
+              </h2>
               <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground-muted">
                 OAuth
               </span>
@@ -139,14 +134,9 @@ export function ConnectScreen({ oauthError }: ConnectScreenProps) {
 
           <article className="glass relative flex flex-col gap-6 rounded-2xl p-7">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-accent-violet">
-                  Option B
-                </p>
-                <h2 className="mt-2 text-xl font-medium tracking-tight text-foreground">
-                  Use a personal access token
-                </h2>
-              </div>
+              <h2 className="text-xl font-medium tracking-tight text-foreground">
+                Use a personal access token
+              </h2>
               <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-foreground-muted">
                 PAT
               </span>

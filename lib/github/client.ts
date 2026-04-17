@@ -130,5 +130,6 @@ export async function fetchRepo(
     defaultBranch: data.default_branch,
     isPrivate: data.private,
     htmlUrl: data.html_url,
+    canPush: Boolean(data.permissions?.push),
   };
 }
