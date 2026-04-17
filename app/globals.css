@@ -71,17 +71,19 @@
     -webkit-backdrop-filter: blur(14px) saturate(140%);
   }
 
-  /* Solid floating dock — opaque enough that scrolling content
-     can't bleed through. Used for the bottom Fix-PR action bar. */
+  /* Solid floating dock — fully opaque so scrolling cards can't bleed
+     through. Used for the bottom action bar. */
   .dock {
-    background: rgba(8, 8, 14, 0.96);
+    /* Solid bg first (fallback), then a subtle gradient so it doesn't
+       look flat. No alpha — content behind never shows. */
+    background-color: #0b0b12;
+    background-image: linear-gradient(180deg, #11111a 0%, #08080d 100%);
     border: 1px solid var(--border-strong);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
     box-shadow:
-      0 -1px 0 rgba(255, 255, 255, 0.04) inset,
-      0 24px 60px -20px rgba(0, 0, 0, 0.9),
-      0 0 0 1px rgba(34, 211, 238, 0.06);
+      0 -1px 0 rgba(255, 255, 255, 0.05) inset,
+      0 28px 70px -20px rgba(0, 0, 0, 0.95),
+      0 0 0 1px rgba(34, 211, 238, 0.08),
+      0 0 60px -20px rgba(34, 211, 238, 0.18);
   }
 
   .grid-backdrop {
