@@ -17,11 +17,15 @@ export async function runScan(input: RunScanInput): Promise<ScanResult> {
   const settled = await Promise.allSettled(applicable.map((r) => r.detect(ctx)));
 
   const issues: Issue[] = [];
-  for (const result of settled) {
+  settled.forEach((result, i) => {
     if (result.status === "fulfilled") {
       issues.push(...result.value);
+    } else {
+      // Don't silently swallow rule failures — make them visible.
+      const ruleId = applicable[i]?.id ?? "unknown";
+      console.error(`[scan] rule "${ruleId}" failed:`, result.reason);
     }
-  }
+  });
 
   return {
     repo: {

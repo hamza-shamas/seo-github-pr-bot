@@ -2,7 +2,16 @@ import { Octokit } from "@octokit/rest";
 import type { ConnectedRepo } from "../types";
 
 export function octokit(token: string): Octokit {
-  return new Octokit({ auth: token, userAgent: "seo-github-pr-bot/0.1" });
+  return new Octokit({
+    auth: token,
+    userAgent: "seo-github-pr-bot/0.1",
+    request: {
+      // Cut retries from the default 3 to 1 so a flaky GitHub fails fast
+      // instead of stalling the page render for 10+ seconds.
+      retries: 1,
+      retryAfter: 1,
+    },
+  });
 }
 
 export interface GitHubIdentity {
