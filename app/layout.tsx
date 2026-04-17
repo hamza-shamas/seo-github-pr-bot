@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GEO Forge — AI-ready SEO PRs for any GitHub repo",
+  title: "GEO Forge — AI-drafted SEO + GEO PRs for any GitHub repo",
   description:
     "Connect a GitHub repo, scan it for SEO and GEO gaps, and open an AI-generated pull request with the fixes — in one click.",
 };
@@ -30,7 +30,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <Header />
         {children}
       </body>

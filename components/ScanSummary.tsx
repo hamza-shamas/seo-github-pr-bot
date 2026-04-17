@@ -4,7 +4,7 @@ import type { ScanResult, Severity } from "@/lib/types";
 const MODE_LABEL: Record<ScanResult["repo"]["mode"], string> = {
   next: "Next.js",
   html: "Static HTML",
-  unknown: "Unknown stack",
+  unknown: "Server-rendered or unrecognized stack — only file-presence rules apply",
 };
 
 export function ScanSummary({ scan }: { scan: ScanResult }) {
@@ -44,9 +44,8 @@ export function ScanSummary({ scan }: { scan: ScanResult }) {
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
         <p className="text-sm text-foreground-muted">
           {scan.issues.length === 0
-            ? "No issues detected against the v1 ruleset. "
-            : `${scan.issues.length} issue${scan.issues.length === 1 ? "" : "s"} found across SEO + GEO rules. `}
-          The fix-PR generator (with Claude-drafted content) ships in PR 2b.
+            ? "No issues detected against the v1 ruleset."
+            : `${scan.issues.length} issue${scan.issues.length === 1 ? "" : "s"} found across SEO + GEO rules. Select the ones you want fixed, then click Run AI agent — it will inspect the repo, draft each change, and open a single PR for review.`}
         </p>
         <Link
           href="/"

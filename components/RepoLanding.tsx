@@ -107,7 +107,7 @@ function ConnectedRepoView({ repo }: { repo: ConnectedRepo }) {
           Run SEO + GEO scan →
         </Link>
         <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground-muted">
-          Auto-fix PR ships in PR 2b
+          Auto-fix PR opens in one click
         </span>
         <RepoDisconnectButton />
       </div>

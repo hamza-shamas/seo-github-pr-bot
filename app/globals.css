@@ -1,22 +1,5 @@
 @import "tailwindcss";
 
-:root {
-  --background: #07070b;
-  --background-soft: #0c0c12;
-  --foreground: #e9eaf2;
-  --foreground-muted: #8b8da3;
-  --surface: rgba(255, 255, 255, 0.035);
-  --surface-strong: rgba(255, 255, 255, 0.06);
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.14);
-  --accent-cyan: #22d3ee;
-  --accent-violet: #a855f7;
-  --accent-glow: rgba(34, 211, 238, 0.32);
-  --accent-glow-soft: rgba(168, 85, 247, 0.18);
-  --danger: #f87171;
-  --success: #4ade80;
-}
-
 @theme inline {
   --color-background: var(--background);
   --color-background-soft: var(--background-soft);
@@ -34,97 +17,131 @@
   --font-mono: var(--font-geist-mono);
 }
 
-html,
-body {
-  background: var(--background);
-  color: var(--foreground);
-  color-scheme: dark;
+@layer base {
+  :root {
+    --background: #07070b;
+    --background-soft: #0c0c12;
+    --foreground: #e9eaf2;
+    --foreground-muted: #8b8da3;
+    --surface: rgba(255, 255, 255, 0.035);
+    --surface-strong: rgba(255, 255, 255, 0.06);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-strong: rgba(255, 255, 255, 0.14);
+    --accent-cyan: #22d3ee;
+    --accent-violet: #a855f7;
+    --accent-glow: rgba(34, 211, 238, 0.32);
+    --accent-glow-soft: rgba(168, 85, 247, 0.18);
+    --danger: #f87171;
+    --success: #4ade80;
+  }
+
+  html,
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    color-scheme: dark;
+  }
+
+  body {
+    font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+    background-image:
+      radial-gradient(circle at 18% 12%, rgba(34, 211, 238, 0.18), transparent 55%),
+      radial-gradient(circle at 82% 90%, rgba(168, 85, 247, 0.16), transparent 55%),
+      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03), transparent 70%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: rgba(34, 211, 238, 0.25);
+    color: var(--foreground);
+  }
 }
 
-body {
-  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
-  background-image:
-    radial-gradient(circle at 18% 12%, rgba(34, 211, 238, 0.18), transparent 55%),
-    radial-gradient(circle at 82% 90%, rgba(168, 85, 247, 0.16), transparent 55%),
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03), transparent 70%);
-  background-attachment: fixed;
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-}
+@layer components {
+  .glass {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.045) 0%,
+      rgba(255, 255, 255, 0.02) 100%
+    );
+    border: 1px solid var(--border);
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+  }
 
-::selection {
-  background: rgba(34, 211, 238, 0.25);
-  color: var(--foreground);
-}
+  /* Solid floating dock — opaque enough that scrolling content
+     can't bleed through. Used for the bottom Fix-PR action bar. */
+  .dock {
+    background: rgba(8, 8, 14, 0.96);
+    border: 1px solid var(--border-strong);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    box-shadow:
+      0 -1px 0 rgba(255, 255, 255, 0.04) inset,
+      0 24px 60px -20px rgba(0, 0, 0, 0.9),
+      0 0 0 1px rgba(34, 211, 238, 0.06);
+  }
 
-.glass {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.045) 0%,
-    rgba(255, 255, 255, 0.02) 100%
-  );
-  border: 1px solid var(--border);
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-}
+  .grid-backdrop {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
+    -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
+  }
 
-.grid-backdrop {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
-  -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
-}
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-violet) 100%);
+    color: #07070b;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+      0 18px 40px -12px var(--accent-glow);
+    transition: transform 120ms ease, box-shadow 200ms ease, filter 200ms ease;
+  }
 
-.btn-primary {
-  background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-violet) 100%);
-  color: #07070b;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
-    0 18px 40px -12px var(--accent-glow);
-  transition: transform 120ms ease, box-shadow 200ms ease, filter 200ms ease;
-}
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.12) inset,
+      0 22px 48px -12px var(--accent-glow);
+  }
 
-.btn-primary:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.06);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.12) inset,
-    0 22px 48px -12px var(--accent-glow);
-}
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
 
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
+  .input-shell {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--border);
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
 
-.input-shell {
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid var(--border);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
-}
+  .input-shell:focus-within {
+    border-color: rgba(34, 211, 238, 0.55);
+    box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.1);
+  }
 
-.input-shell:focus-within {
-  border-color: rgba(34, 211, 238, 0.55);
-  box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.1);
-}
+  .text-gradient {
+    background: linear-gradient(120deg, #ffffff 0%, #c8b8ff 50%, #6ee7ff 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
 
-.text-gradient {
-  background: linear-gradient(120deg, #ffffff 0%, #c8b8ff 50%, #6ee7ff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  .pulse-dot {
+    animation: pulse-dot 1.6s ease-in-out infinite;
+  }
 }
 
 @keyframes pulse-dot {
   0%, 100% { opacity: 0.45; }
   50% { opacity: 1; }
-}
-
-.pulse-dot {
-  animation: pulse-dot 1.6s ease-in-out infinite;
 }

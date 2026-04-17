@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getSessionUser } from "@/lib/session";
 import { fetchRepo } from "@/lib/github/client";
 import { runScan } from "@/lib/scan/runScan";
-import { IssueCard } from "@/components/IssueCard";
+import { ScanResultsClient } from "@/components/ScanResultsClient";
 import { ScanSummary } from "@/components/ScanSummary";
 
 export const runtime = "nodejs";
@@ -44,18 +44,12 @@ export default async function ScanPage({ params }: ScanPageProps) {
         aria-hidden
         className="grid-backdrop pointer-events-none absolute inset-0 -z-10 opacity-50"
       />
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
         <ScanSummary scan={scan} />
         {scan.issues.length === 0 ? (
           <EmptyState />
         ) : (
-          <ul className="flex flex-col gap-4">
-            {scan.issues.map((issue) => (
-              <li key={issue.id}>
-                <IssueCard issue={issue} />
-              </li>
-            ))}
-          </ul>
+          <ScanResultsClient scan={scan} />
         )}
       </div>
     </main>

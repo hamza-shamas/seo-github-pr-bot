@@ -23,8 +23,16 @@ export async function Header() {
               G
             </span>
           </span>
-          <span className="font-mono text-sm uppercase tracking-[0.22em] text-foreground">
-            geo.forge
+          <span className="flex flex-col leading-tight">
+            <span className="font-mono text-sm uppercase tracking-[0.22em] text-foreground">
+              geo.forge
+            </span>
+            <span
+              className="font-mono text-[9px] uppercase tracking-[0.18em] text-foreground-muted"
+              title="GEO = Generative Engine Optimization — making your site discoverable to AI search engines like ChatGPT, Perplexity, and Claude."
+            >
+              generative engine optimization
+            </span>
           </span>
         </Link>
 
