@@ -16,6 +16,9 @@ interface AgentStreamPanelProps {
   /** False when the connected token has no write access to this repo. */
   canPush: boolean;
   onClear: () => void;
+  /** Called when the agent successfully opens a PR. Lets the parent
+   * mark the fixed issues so their cards flip to "View PR". */
+  onPrOpened?: (pr: { url: string; number: number }) => void;
 }
 
 export function AgentStreamPanel({
@@ -25,11 +28,13 @@ export function AgentStreamPanel({
   needsSiteUrl,
   canPush,
   onClear,
+  onPrOpened,
 }: AgentStreamPanelProps) {
   const [events, setEvents] = useState<AgentEvent[]>([]);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [siteUrl, setSiteUrl] = useState("");
+  const [openedPr, setOpenedPr] = useState<{ url: string; number: number } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
 
@@ -44,6 +49,7 @@ export function AgentStreamPanel({
     setStatus("running");
     setError(null);
     setEvents([]);
+    setOpenedPr(null);
 
     const ac = new AbortController();
     abortRef.current = ac;
@@ -89,6 +95,11 @@ export function AgentStreamPanel({
             setError(evt.message);
             setStatus("error");
           }
+          if (evt.type === "pr_opened") {
+            const pr = { url: evt.url, number: evt.number };
+            setOpenedPr(pr);
+            onPrOpened?.(pr);
+          }
           if (evt.type === "end") {
             setStatus((s) => (s === "error" ? "error" : "done"));
           }
@@ -108,12 +119,21 @@ export function AgentStreamPanel({
     setStatus("idle");
     setEvents([]);
     setError(null);
+    setOpenedPr(null);
   }
 
-  // While status === "running" we render a fullscreen z-40 backdrop that
-  // captures all pointer events. The dock sits at z-50 so its Cancel
-  // button still works; everything behind (issue cards, header links)
-  // is dimmed and click-blocked until the agent finishes.
+  function dismiss() {
+    setStatus("idle");
+    setEvents([]);
+    setError(null);
+    setOpenedPr(null);
+    onClear();
+  }
+
+  const tooltipText = canPush
+    ? `This will fix ${selectedIds.length} issue${selectedIds.length === 1 ? "" : "s"} and raise a pull request.`
+    : "Read-only repo — connect a repo you own (or are a collaborator on) to raise a PR.";
+
   return (
     <>
       {status === "running" && (
@@ -124,90 +144,132 @@ export function AgentStreamPanel({
       )}
       <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-6">
         <div className="pointer-events-auto dock flex w-full max-w-3xl flex-col gap-4 rounded-2xl px-5 py-4">
-        {status === "idle" && needsSiteUrl && (
-          <label className="flex flex-col gap-1.5">
-            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground-muted">
-              Site URL · used for sitemap.xml / robots.txt
-            </span>
-            <input
-              type="text"
-              value={siteUrl}
-              onChange={(e) => setSiteUrl(e.target.value)}
-              placeholder="https://your-site.com  (optional — falls back to example.com if blank)"
-              autoComplete="off"
-              spellCheck={false}
-              className="input-shell rounded-xl px-3 py-2 font-mono text-sm text-foreground placeholder:text-foreground-muted focus:outline-none"
-            />
-          </label>
-        )}
+          {status === "idle" && needsSiteUrl && (
+            <label className="flex flex-col gap-1.5">
+              <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground-muted">
+                Site URL · used for sitemap.xml / robots.txt
+              </span>
+              <input
+                type="text"
+                value={siteUrl}
+                onChange={(e) => setSiteUrl(e.target.value)}
+                placeholder="https://your-site.com  (optional — falls back to example.com if blank)"
+                autoComplete="off"
+                spellCheck={false}
+                className="input-shell rounded-xl px-3 py-2 font-mono text-sm text-foreground placeholder:text-foreground-muted focus:outline-none"
+              />
+            </label>
+          )}
 
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex flex-col">
-            <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground-muted">
-              {status === "idle" && "Selected"}
-              {status === "running" && "Working"}
-              {status === "done" && "Done"}
-              {status === "error" && "Failed"}
-            </span>
-            <span className="font-mono text-sm text-foreground">
-              {status === "idle" &&
-                `${selectedIds.length} issue${selectedIds.length === 1 ? "" : "s"}`}
-              {status === "running" && "Fixing the issues…"}
-              {status === "done" && "Fixed"}
-              {status === "error" && "Please try again"}
-            </span>
-            {error && <span className="mt-1 font-mono text-xs text-danger">{error}</span>}
-          </div>
-          <div className="flex items-center gap-3">
-            {status === "idle" && (
-              <>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col">
+              <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-foreground-muted">
+                {status === "idle" && "Selected"}
+                {status === "running" && "Working"}
+                {status === "done" && "Done"}
+                {status === "error" && "Failed"}
+              </span>
+              <span className="font-mono text-sm text-foreground">
+                {status === "idle" &&
+                  `${selectedIds.length} issue${selectedIds.length === 1 ? "" : "s"}`}
+                {status === "running" && "Fixing the issues…"}
+                {status === "done" && (openedPr ? `PR #${openedPr.number} ready` : "Fixed")}
+                {status === "error" && "Please try again"}
+              </span>
+              {error && <span className="mt-1 font-mono text-xs text-danger">{error}</span>}
+            </div>
+
+            <div className="flex items-center gap-3">
+              {status === "idle" && (
+                <>
+                  <button
+                    type="button"
+                    onClick={onClear}
+                    className="font-mono text-[11px] uppercase tracking-[0.18em] text-foreground-muted underline decoration-dotted underline-offset-4 hover:text-foreground"
+                  >
+                    Clear
+                  </button>
+                  <span className="group relative inline-flex">
+                    <button
+                      type="button"
+                      onClick={start}
+                      disabled={!canPush}
+                      aria-label={tooltipText}
+                      className="btn-primary inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm"
+                    >
+                      {canPush ? "Raise PR" : "Read-only — can't raise PR"}
+                      {canPush && (
+                        <span
+                          aria-hidden
+                          className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-current/50 font-mono text-[9px] font-bold"
+                        >
+                          i
+                        </span>
+                      )}
+                    </button>
+                    {canPush && (
+                      <span
+                        role="tooltip"
+                        className="pointer-events-none absolute bottom-full right-0 mb-2 hidden w-64 rounded-xl border border-border-strong bg-background-soft/95 px-3 py-2 text-left font-mono text-[11px] leading-snug text-foreground shadow-xl group-hover:block group-focus-within:block"
+                      >
+                        {tooltipText}
+                      </span>
+                    )}
+                  </span>
+                </>
+              )}
+
+              {status === "running" && (
                 <button
                   type="button"
-                  onClick={onClear}
+                  onClick={cancel}
                   className="font-mono text-[11px] uppercase tracking-[0.18em] text-foreground-muted underline decoration-dotted underline-offset-4 hover:text-foreground"
                 >
-                  Clear
+                  Cancel
                 </button>
+              )}
+
+              {status === "done" && openedPr && (
+                <>
+                  <button
+                    type="button"
+                    onClick={dismiss}
+                    className="font-mono text-[11px] uppercase tracking-[0.18em] text-foreground-muted underline decoration-dotted underline-offset-4 hover:text-foreground"
+                  >
+                    Dismiss
+                  </button>
+                  <a
+                    href={openedPr.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm"
+                  >
+                    View PR #{openedPr.number} ↗
+                  </a>
+                </>
+              )}
+
+              {status === "done" && !openedPr && (
                 <button
                   type="button"
-                  onClick={start}
-                  disabled={!canPush}
-                  title={
-                    canPush
-                      ? undefined
-                      : "Read-only repo — connect a repo you own (or are a collaborator on) to run the AI agent."
-                  }
-                  className="btn-primary inline-flex h-11 items-center justify-center rounded-xl px-5 text-sm"
+                  onClick={dismiss}
+                  className="font-mono text-[11px] uppercase tracking-[0.18em] text-foreground-muted underline decoration-dotted underline-offset-4 hover:text-foreground"
                 >
-                  {canPush ? "Run AI agent →" : "Read-only — can't open PR"}
+                  Dismiss
                 </button>
-              </>
-            )}
-            {status === "running" && (
-              <button
-                type="button"
-                onClick={cancel}
-                className="font-mono text-[11px] uppercase tracking-[0.18em] text-foreground-muted underline decoration-dotted underline-offset-4 hover:text-foreground"
-              >
-                Cancel
-              </button>
-            )}
-            {(status === "done" || status === "error") && (
-              <button
-                type="button"
-                onClick={() => {
-                  setStatus("idle");
-                  setEvents([]);
-                  setError(null);
-                  onClear();
-                }}
-                className="font-mono text-[11px] uppercase tracking-[0.18em] text-foreground-muted underline decoration-dotted underline-offset-4 hover:text-foreground"
-              >
-                Dismiss
-              </button>
-            )}
+              )}
+
+              {status === "error" && (
+                <button
+                  type="button"
+                  onClick={dismiss}
+                  className="font-mono text-[11px] uppercase tracking-[0.18em] text-foreground-muted underline decoration-dotted underline-offset-4 hover:text-foreground"
+                >
+                  Dismiss
+                </button>
+              )}
+            </div>
           </div>
-        </div>
 
           {events.length > 0 && (
             <div
@@ -266,7 +328,7 @@ function EventRow({ event }: { event: AgentEvent }) {
       );
     case "pr_opened":
       return (
-        <Line color="success">
+        <div className="my-2 rounded-lg border border-success/40 bg-success/5 px-3 py-2 text-sm font-semibold text-success">
           ✓ PR opened · branch {event.branch} ·{" "}
           <a
             href={event.url}
@@ -276,7 +338,7 @@ function EventRow({ event }: { event: AgentEvent }) {
           >
             #{event.number} ↗
           </a>
-        </Line>
+        </div>
       );
     case "pr_existing":
       return (
