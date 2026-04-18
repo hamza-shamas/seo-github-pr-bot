@@ -12,6 +12,15 @@ interface ScanResultsClientProps {
   canPush: boolean;
 }
 
+interface RaisedPr {
+  url: string;
+  number: number;
+  /** The issues the user selected when raising this PR. */
+  issueIds: Set<string>;
+}
+
+const URL_DEPENDENT_RULES = new Set(["sitemap-xml", "robots-txt"]);
+
 export function ScanResultsClient({ scan, canPush }: ScanResultsClientProps) {
   // With the AI agent, every detected issue is fixable in principle —
   // the agent will figure out which files to touch (or skip the issue if
@@ -21,11 +30,8 @@ export function ScanResultsClient({ scan, canPush }: ScanResultsClientProps) {
     [scan]
   );
 
-  // Only need to ask for a Site URL when the agent's about to write
-  // sitemap.xml or robots.txt — both of those fixes embed the host.
-  const URL_DEPENDENT_RULES = new Set(["sitemap-xml", "robots-txt"]);
-
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [raisedPr, setRaisedPr] = useState<RaisedPr | null>(null);
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -44,6 +50,10 @@ export function ScanResultsClient({ scan, canPush }: ScanResultsClientProps) {
     setSelected(new Set());
   }
 
+  function handlePrOpened(pr: { url: string; number: number }) {
+    setRaisedPr({ url: pr.url, number: pr.number, issueIds: new Set(selected) });
+  }
+
   const hasFixable = fixableIds.size > 0;
   const allSelected = hasFixable && selected.size === fixableIds.size;
 
@@ -54,12 +64,18 @@ export function ScanResultsClient({ scan, canPush }: ScanResultsClientProps) {
     return false;
   }, [scan.issues, selected]);
 
+  // Only show the selection bar + dock if there are issues that AREN'T
+  // already covered by the most recent raised PR.
+  const remainingFixableCount = raisedPr
+    ? [...fixableIds].filter((id) => !raisedPr.issueIds.has(id)).length
+    : fixableIds.size;
+
   return (
     <>
-      {hasFixable && (
+      {hasFixable && remainingFixableCount > 0 && (
         <div className="flex items-center justify-between rounded-xl border border-border bg-surface px-4 py-3">
           <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-foreground-muted">
-            {fixableIds.size} auto-fixable · {selected.size} selected
+            {remainingFixableCount} auto-fixable · {selected.size} selected
           </span>
           <button
             type="button"
@@ -72,17 +88,24 @@ export function ScanResultsClient({ scan, canPush }: ScanResultsClientProps) {
       )}
 
       <ul className="flex flex-col gap-4 pb-32">
-        {scan.issues.map((issue) => (
-          <li key={issue.id}>
-            <IssueCard
-              issue={issue}
-              mode={scan.repo.mode}
-              selected={selected.has(issue.id)}
-              disabled={!fixableIds.has(issue.id)}
-              onToggle={() => toggle(issue.id)}
-            />
-          </li>
-        ))}
+        {scan.issues.map((issue) => {
+          const prLink =
+            raisedPr && raisedPr.issueIds.has(issue.id)
+              ? { url: raisedPr.url, number: raisedPr.number }
+              : undefined;
+          return (
+            <li key={issue.id}>
+              <IssueCard
+                issue={issue}
+                mode={scan.repo.mode}
+                selected={selected.has(issue.id)}
+                disabled={!fixableIds.has(issue.id) || prLink !== undefined}
+                onToggle={() => toggle(issue.id)}
+                prLink={prLink}
+              />
+            </li>
+          );
+        })}
       </ul>
 
       <AgentStreamPanel
@@ -92,6 +115,7 @@ export function ScanResultsClient({ scan, canPush }: ScanResultsClientProps) {
         needsSiteUrl={needsSiteUrl}
         canPush={canPush}
         onClear={clear}
+        onPrOpened={handlePrOpened}
       />
     </>
   );
