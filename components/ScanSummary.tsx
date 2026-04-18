@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { ScanResult, Severity } from "@/lib/types";
+import { PickDifferentRepoLink } from "./PickDifferentRepoLink";
 
 const MODE_LABEL: Record<ScanResult["repo"]["mode"], string> = {
   next: "Next.js",
@@ -47,12 +47,7 @@ export function ScanSummary({ scan }: { scan: ScanResult }) {
             ? "No issues detected against the v1 ruleset."
             : `${scan.issues.length} issue${scan.issues.length === 1 ? "" : "s"} found across SEO + GEO rules. Select the ones you want fixed, then click Run AI agent — it will inspect the repo, draft each change, and open a single PR for review.`}
         </p>
-        <Link
-          href="/"
-          className="font-mono text-[11px] uppercase tracking-[0.18em] text-foreground-muted underline decoration-dotted underline-offset-4 hover:text-foreground"
-        >
-          ← Pick a different repo
-        </Link>
+        <PickDifferentRepoLink />
       </div>
     </section>
   );
