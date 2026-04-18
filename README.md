@@ -76,7 +76,7 @@ GEO = **Generative Engine Optimization** — making your site discoverable not j
                            │  blobs → tree → commit → ref → PR │
                            └──────────────────────────────────┘
                                       ↓
-                                  GitHub 🎉
+                                  GitHub
 ```
 
 ---
